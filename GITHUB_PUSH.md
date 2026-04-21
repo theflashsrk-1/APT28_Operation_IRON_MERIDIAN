@@ -3,12 +3,12 @@
 ## Initial Setup
 
 ```bash
-git init PROJECT1
-cd PROJECT1
+git init APT28
+cd APT28
 cp -r /path/to/extracted/* .
 git add .
 git commit -m "APT28 - Operation IRON MERIDIAN - Initial Release"
-git remote add origin https://github.com/hacktifytechnologies/PROJECT1.git
+git remote add origin https://github.com/hacktifytechnologies/APT28.git
 git branch -M main
 git push -u origin main
 ```
@@ -16,7 +16,7 @@ git push -u origin main
 ## File Structure
 
 ```
-PROJECT1/
+APT28/
 ├── README.md
 ├── STORYLINE.md
 ├── NETWORK_DIAGRAM.md
