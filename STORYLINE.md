@@ -2,11 +2,10 @@
 
 ## Intelligence Brief
 
-**Operation:** IRON MERIDIAN
-**Classification:** CONFIDENTIAL // EXERCISE ONLY
-**Issuing Authority:** Corporate Incident Response Division (CIRD)
-**Target Organization:** CybeRange Healthcare Systems
-**Threat Actor:** APT28 / Forest Blizzard / STRONTIUM (GRU Unit 26165)
+**Operation:** IRON MERIDIAN\
+**Classification:** CONFIDENTIAL // EXERCISE ONLY\
+**Issuing Authority:** Corporate Incident Response Division (CIRD)\
+**Target Organization:** CybeRange Healthcare Systems\
 **Date:** [EXERCISE DATE]
 
 ---
