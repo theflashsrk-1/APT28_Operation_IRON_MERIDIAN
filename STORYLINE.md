@@ -1,4 +1,4 @@
-# APT28 — Operation IRON MERIDIAN — Full Storyline
+# APT28 Operation IRON MERIDIAN — Full Storyline
 
 ## Intelligence Brief
 
