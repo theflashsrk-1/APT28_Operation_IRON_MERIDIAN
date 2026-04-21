@@ -1,0 +1,78 @@
+- name: 'APT28 - IRON MERIDIAN: PKINIT Certificate Authentication and DCSync Domain Compromise (DC01)'
+  description: >-
+    Models the final domain-compromise stage in which a forged certificate is used
+    for Kerberos PKINIT authentication against DC01, followed by directory
+    replication abuse to recover domain credential material. In the intended attack
+    path, this step provides privileged access equivalent to a trusted replication
+    partner and enables theft of password hashes and Kerberos keys across the
+    domain. Defenders would typically expect to see certificate-backed TGT activity,
+    privileged directory access, and replication-related operations that do not
+    match normal domain controller behaviour.
+  tactic: credential-access
+  technique_id: T1003.006
+  technique_name: 'OS Credential Dumping: DCSync'
+  singleton: false
+  repeatable: false
+  delete_payload: false
+  executors:
+  - name: psh
+    platform: windows
+    command: |-
+      $ErrorActionPreference = "SilentlyContinue"
+
+      Write-Host "[*] Verifying KDC certificate posture and replication state on DC01" -ForegroundColor Cyan
+      certutil -dcinfo verify |
+        Select-String -Pattern "DC:|KDC|Certificate|Domain|Forest" |
+        ForEach-Object { $_.Line }
+
+      Write-Host "`n[*] Replication summary (read-only)" -ForegroundColor Cyan
+      repadmin /showrepl localhost |
+        Select-String -Pattern "Default-First-Site-Name|DSA object GUID|Last attempt|result" |
+        ForEach-Object { $_.Line }
+
+      try {
+        Import-Module ActiveDirectory -ErrorAction Stop
+        Write-Host "`n[*] Administrator account snapshot" -ForegroundColor Cyan
+        Get-ADUser "Administrator" -Properties DistinguishedName, Enabled, LastLogonTimestamp |
+          Select-Object SamAccountName, Enabled, DistinguishedName, @{
+            Name="LastLogon"
+            Expression={ if ($_.LastLogonTimestamp) { [DateTime]::FromFileTime($_.LastLogonTimestamp) } else { $null } }
+          } |
+          Format-List | Out-String | Write-Host
+      }
+      catch {
+        Write-Host "`n[!] ActiveDirectory module unavailable; falling back to domain context check" -ForegroundColor Yellow
+        whoami /fqdn
+      }
+    code: null
+    language: null
+    build_target: null
+    payloads: []
+    uploads: []
+    timeout: 180
+    parsers: []
+    cleanup: []
+    variations: []
+    additional_info:
+      target_host: DC01.cyberange.local
+      target_ip_suffix: .10
+      domain: cyberange.local
+      domain_netbios: cyberange
+      authentication_method: PKINIT with forged certificate
+      certificate_san: Administrator@cyberange.local
+      certificate_issuer: cyberange-CA
+      technique_chain:
+        step1: PKINIT TGT request using certificate
+        step2: UnPAC-the-Hash to retrieve NT hash for Administrator
+        step3: DCSync replication request for all domain hashes
+      dcsync_rights_source: Built-in Administrator (default Replication-Get-Changes-All)
+      data_obtained:
+        - NT hashes for all domain accounts
+        - Kerberos AES keys for all domain accounts
+        - krbtgt hash (enables Golden Ticket creation)
+      detection_events:
+        - '4768 - TGT issued using certificate pre-authentication'
+        - '4662 - Object operation with Replication-Get-Changes-All GUID {1131f6ad-9c07-11d1-f79f-00c04fc2dcd2}'
+        - 'No preceding 4769 (DCSync bypasses normal service ticket flow)'
+  requirements: []
+  id: e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0

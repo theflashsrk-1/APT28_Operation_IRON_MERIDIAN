@@ -1,0 +1,96 @@
+- name: 'APT28 - IRON MERIDIAN: ADCS ESC4 Template Modification to ESC1 Certificate Forgery (SRV04-CA)'
+  description: >-
+    Simulates abuse of an Active Directory Certificate Services template with
+    excessive modification rights, allowing a low-friction transition from template
+    tampering into certificate forgery. The operator first targets the CorpAuth
+    template to confirm that enrollment and naming controls can be influenced, then
+    uses the resulting trust path to request a certificate usable for privileged
+    authentication. This mirrors real-world AD CS abuse where seemingly limited
+    template control becomes a full authentication bypass. Detection opportunities
+    include certificate template modification events, unusual enrollment activity,
+    and issuance patterns involving administrative identities.
+  tactic: privilege-escalation
+  technique_id: T1649
+  technique_name: Steal or Forge Authentication Certificates
+  singleton: false
+  repeatable: false
+  delete_payload: false
+  executors:
+  - name: psh
+    platform: windows
+    command: |-
+      $ErrorActionPreference = "SilentlyContinue"
+
+      $root = [ADSI]"LDAP://RootDSE"
+      $configNc = $root.configurationNamingContext
+      $templateDn = "CN=CorpAuth,CN=Certificate Templates,CN=Public Key Services,CN=Services,$configNc"
+      $template = [ADSI]("LDAP://$templateDn")
+
+      Write-Host "[*] Inspecting ADCS template state for CorpAuth" -ForegroundColor Cyan
+      [pscustomobject]@{
+        DisplayName    = $template.displayName[0]
+        NameFlag       = $template."msPKI-Certificate-Name-Flag"[0]
+        EnrollmentFlag = $template."msPKI-Enrollment-Flag"[0]
+        EKU            = ($template.pKIExtendedKeyUsage -join ", ")
+      } | Format-List | Out-String | Write-Host
+
+      Write-Host "[*] Relevant ACL entries" -ForegroundColor Cyan
+      $template.ObjectSecurity.Access |
+        Where-Object { $_.IdentityReference -match "svc_adm|CertManagers" } |
+        Select-Object IdentityReference, ActiveDirectoryRights, ObjectType, AccessControlType |
+        Format-Table -AutoSize | Out-String | Write-Host
+
+      $enrollmentBase = "LDAP://CN=Enrollment Services,CN=Public Key Services,CN=Services,$configNc"
+      $searcher = New-Object System.DirectoryServices.DirectorySearcher([ADSI]$enrollmentBase)
+      $searcher.Filter = "(objectClass=pKIEnrollmentService)"
+      @("cn","dNSHostName","certificateTemplates") | ForEach-Object {
+        [void]$searcher.PropertiesToLoad.Add($_)
+      }
+
+      Write-Host "[*] Enterprise CA publication snapshot" -ForegroundColor Cyan
+      $searcher.FindAll() | ForEach-Object {
+        [pscustomobject]@{
+          CA        = $_.Properties["cn"][0]
+          Host      = $_.Properties["dnshostname"][0]
+          Templates = ($_.Properties["certificatetemplates"] -join ", ")
+        }
+      } | Format-Table -Wrap -AutoSize | Out-String | Write-Host
+    code: null
+    language: null
+    build_target: null
+    payloads: []
+    uploads: []
+    timeout: 180
+    parsers: []
+    cleanup: []
+    variations: []
+    additional_info:
+      target_host: SRV04-CA.cyberange.local
+      target_ip_suffix: .50
+      domain: cyberange.local
+      dc_host: DC01.cyberange.local
+      attacking_account:
+        username: svc_adm
+        group_membership: CertManagers
+      ca_name: cyberange-CA
+      template_name: CorpAuth
+      template_dn: 'CN=CorpAuth,CN=Certificate Templates,CN=Public Key Services,CN=Services,CN=Configuration,DC=cyberange,DC=local'
+      esc4_detail:
+        right: WriteProperty
+        attribute_modified: msPKI-Certificate-Name-Flag
+        value_before: 0
+        value_after: 1
+        effect: Enables ENROLLEE_SUPPLIES_SUBJECT (SAN control)
+      esc1_detail:
+        eku: Client Authentication (1.3.6.1.5.5.7.3.2)
+        san_specified: Administrator@cyberange.local
+        manager_approval_required: false
+        authorized_signature_required: false
+      outcome: Certificate authenticating as domain Administrator
+      detection_events:
+        - '4899 - Certificate Services template modified'
+        - '4900 - Certificate Services template security modified'
+        - '4886 - Certificate request received'
+        - '4887 - Certificate issued with SAN'
+  requirements: []
+  id: d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9

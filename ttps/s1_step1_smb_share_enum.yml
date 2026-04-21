@@ -1,0 +1,98 @@
+- name: 'APT28 - IRON MERIDIAN: SMB Share Enumeration and Credential Harvesting (SRV01-WEB)'
+  description: >-
+    Performs broad file-share reconnaissance against SRV01-WEB to identify exposed
+    business data, archived application content, and operational scripts that may
+    contain reusable service credentials or configuration material. The activity is
+    intended to mirror an early-stage intruder triaging accessible SMB shares for
+    overlooked secrets in backup paths, deployment artifacts, and legacy web
+    application files. Typical defensive evidence would include share enumeration,
+    repeated file access across multiple directories, and concentrated reads of
+    configuration-like filenames from a single source host.
+  tactic: credential-access
+  technique_id: T1552.001
+  technique_name: 'Unsecured Credentials: Credentials In Files'
+  singleton: false
+  repeatable: true
+  delete_payload: false
+  executors:
+  - name: psh
+    platform: windows
+    command: |-
+      $ErrorActionPreference = "SilentlyContinue"
+      $server = "SRV01-WEB.cyberange.local"
+      $shares = @(
+        "Public$","HR-Docs","IT-Support","Marketing","Dev-Staging","WebApps",
+        "Projects","Ops-Scripts","Training","Backup-Logs","App-Configs",
+        "Finance-Reports","Legal-Templates","Executive","Network-Configs"
+      )
+
+      Write-Host "[*] Enumerating share paths on $server" -ForegroundColor Cyan
+      foreach ($share in $shares) {
+        $path = "\\$server\$share"
+        try {
+          $matches = Get-ChildItem -Path $path -Recurse -File -ErrorAction Stop |
+            Where-Object {
+              $_.Name -match "web\.config|appsettings|config|conf|ini|json|xml|backup|archive|maintenance|sync|connector|readme"
+            } |
+            Select-Object -First 5 FullName, Length, LastWriteTime
+
+          if ($matches) {
+            Write-Host "`n[+] $share" -ForegroundColor Green
+            $matches | Format-Table -AutoSize | Out-String | Write-Host
+          }
+          else {
+            Write-Host "`n[-] $share accessible; no matching files surfaced in quick triage" -ForegroundColor Yellow
+          }
+        }
+        catch {
+          Write-Host "`n[!] $share unavailable or access denied" -ForegroundColor DarkYellow
+        }
+      }
+    code: null
+    language: null
+    build_target: null
+    payloads: []
+    uploads: []
+    timeout: 120
+    parsers: []
+    cleanup: []
+    variations: []
+    additional_info:
+      target_host: SRV01-WEB.cyberange.local
+      target_ip_suffix: .20
+      domain: cyberange.local
+      anonymous_shares:
+        - Public$
+        - HR-Docs
+        - IT-Support
+        - Marketing
+        - Dev-Staging
+        - WebApps
+        - Projects
+        - Ops-Scripts
+        - Training
+        - Backup-Logs
+        - App-Configs
+      auth_required_shares:
+        - Finance-Reports
+        - Legal-Templates
+        - Executive
+        - Network-Configs
+      real_cred_locations:
+        - 'WebApps\archive\2024-Q3\corpapp.bak\web.config'
+        - 'Ops-Scripts\Database\Weekly_DB_Maintenance.ps1'
+      real_creds:
+        username: svc_db
+        password: 'Db@ccess2025!'
+      decoy_cred_locations:
+        - 'HR-Docs\Onboarding\sync_config.xml (hr_sync)'
+        - 'IT-Support\Configs\helpdesk_db.conf (it_helpdesk)'
+        - 'Dev-Staging\configs\.env.staging (dev_deploy)'
+        - 'Finance-Reports\Tools\reporting_tool.ini (svc_finance)'
+        - 'Projects\Tools\jira_connector.yml (svc_project)'
+        - 'Network-Configs\Firewall\palo_config_sanitized.txt (net_admin)'
+        - 'Executive\sharepoint_sync.cfg (exec_assistant)'
+        - 'Backup-Logs\veeam_connector.json (svc_backup)'
+        - 'App-Configs\Production\middleware.config (svc_middleware)'
+  requirements: []
+  id: a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6
