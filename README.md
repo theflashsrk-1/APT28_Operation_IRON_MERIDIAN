@@ -1,10 +1,9 @@
-# APT28 — Operation IRON MERIDIAN — Active Directory Certificate Services Cyber Range
+# APT28 Operation IRON MERIDIAN — Active Directory Certificate Services Cyber Range
 
 **Classification:** UNCLASSIFIED // EXERCISE ONLY
 **Domain Theme:** Corporate Enterprise — Healthcare Organization AD + PKI Infrastructure
 **Network:** cyberange.local (simulated)
 **Platform:** Windows Server 2019 — OpenStack / QEMU-KVM
-**APT Emulation:** APT28 (Fancy Bear / Forest Blizzard / STRONTIUM — GRU Unit 26165)
 
 ---
 
