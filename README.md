@@ -2,7 +2,7 @@
 
 **Classification:** UNCLASSIFIED // EXERCISE ONLY\
 **Domain Theme:** Corporate Enterprise — Healthcare Organization AD + PKI Infrastructure\
-**Network:** cyberange.local (simulated)\
+**Network:** cyberange.local\
 **Platform:** Windows Server 2019 — OpenStack / QEMU-KVM
 
 ---
