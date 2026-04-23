@@ -11,13 +11,8 @@
 | **Attack Chain** | Share Maze → SQL Pivot → PrintSpoofer → Shadow Credentials → ESC4/ESC1 → DCSync |
 | **End Goal** | Full Domain Compromise — PKINIT-authenticated DCSync of cyberange.local |
 
----
 
 ## 1. Executive Summary
-
-This document is the authoritative red team write-up for **Range 1: Operation IRON MERIDIAN — Blind Trust**. It covers every phase of the attack chain in detail — what each step does, why it works, the exact commands used, and what output to expect. It serves two purposes: as a technical guide for red team operators running the exercise, and as a reference for participants who need support understanding any stage of the attack.
-
-The range emulates the documented tradecraft of **APT28** (also known as Forest Blizzard, STRONTIUM, and GRU Unit 26165), a Russia-nexus threat actor attributed to Russian military intelligence. APT28 is known for systematic credential harvesting from network resources, database exploitation for lateral movement, Active Directory identity manipulation, and certificate-based authentication abuse for long-dwell operations — all without relying on software exploits. This range replicates that pattern end to end.
 
 The full attack chain runs across five hosts: an IIS file server hosting 15 SMB shares, a MSSQL primary database server, a MSSQL application server, an AD Certificate Services server, and the Domain Controller. Starting from anonymous SMB access to a share containing a buried credential, the chain terminates in a PKINIT-authenticated DCSync that extracts every credential hash in the **cyberange.local** domain — achieved entirely through misconfiguration and identity abuse.
 
@@ -30,8 +25,6 @@ The full attack chain runs across five hosts: an IIS file server hosting 15 SMB 
 | 3 | svc_app (via SQL) | SRV03-APP | PrintSpoofer SYSTEM → create local admin → LSASS dump → svc_app hash | T1134 / T1003.001 |
 | 4 | svc_app NT hash | DC01 | Shadow Credentials: write msDS-KeyCredentialLink → PKINIT as svc_adm | T1556 / T1558 |
 | 5 | svc_adm | SRV04-CA → DC01 | ESC4: modify CorpAuth template → ESC1: request cert as Administrator → DCSync | T1649 / T1003.006 |
-
----
 
 ## 2. Lab Environment
 
@@ -68,7 +61,7 @@ Four deliberate misconfigurations chain together to enable full domain compromis
 
 ### 2.4 Boot Order
 
-Boot **DC01** first and wait 90 seconds for AD DS and DNS to fully initialise. All four member servers can then boot in any order — each runs `Find-DC.ps1` at startup, which calculates the DC IP by substituting `.10` into its own subnet, sets DNS, and verifies LDAP connectivity before completing.
+Boot **DC01** first and wait 90 seconds for AD DS and DNS to fully initialise. All four member servers can then boot in any order — each runs `Find-DC.ps1` at startup, which calculates the DC IP by substituting into its own subnet, sets DNS, and verifies LDAP connectivity before completing.
 
 The lab is fully operational approximately 3–5 minutes after all five VMs are running. **Important:** SRV04-CA must complete its bootstrap before the Shadow Credentials attack is attempted in Step 4, as PKINIT requires an Enterprise CA to be operational in the domain.
 
@@ -87,30 +80,6 @@ Before running any attack step, execute the setup function from the attack scrip
 | nmap | Network discovery and port scanning |
 | certipy-ad | Shadow Credentials attack, ADCS enumeration, ESC4/ESC1 exploitation, PKINIT authentication |
 | PrintSpoofer64.exe | SeImpersonatePrivilege escalation to SYSTEM on SRV03-APP |
-
-### 3.2 Running Setup
-
-Make the attack script executable and launch it as root, then select option `[0]` from the interactive menu.
-
-```bash
-chmod +x attack_chain_s1.sh
-sudo ./attack_chain_s1.sh
-# From the menu, select [0] — Setup Environment
-```
-
-The setup function performs the following automatically:
-
-**DC discovery** — Attempts DNS resolution of `DC01.cyberange.local` first. If that fails, scans the attacker's `/24` subnet for a host with port 88 (Kerberos) open. Falls back to manual IP entry if automated discovery fails.
-
-**`/etc/resolv.conf` update** — Points the attacker's DNS resolver at DC01 so all FQDN lookups resolve through the domain's DNS server.
-
-**`/etc/hosts` population** — Resolves all five FQDNs through domain DNS and writes them into `/etc/hosts` as a fallback.
-
-**`/etc/krb5.conf` configuration** — Writes the Kerberos realm configuration pointing at DC01 as both KDC and admin server. This is required for all `certipy-ad` operations using PKINIT.
-
-**Tool verification** — Checks all required Impacket components, nxc, nmap, certipy-ad, and PrintSpoofer64.exe are present and reports any that are missing.
-
-**State persistence** — All extracted credentials and file paths are written to `/opt/redteam/loot/.state_s1` after each step. If a step is interrupted, re-running it reloads the last saved state. Use option `[S]` to view current state at any time.
 
 ---
 
@@ -483,7 +452,6 @@ impacket-mssqlclient \
 
 > **Step 3 Result:** `svc_app` NT hash (and optionally cleartext password from LSA Secrets) recovered from LSASS on SRV03-APP. Temporary local admin account created and deleted — both events visible in Windows Security logs.
 
----
 
 ## Step 4 — Shadow Credentials Attack: svc_app → svc_adm
 
@@ -573,7 +541,6 @@ impacket-lookupsid \
 
 > **Step 4 Result:** `svc_adm` NT hash recovered via Shadow Credentials. `svc_adm` TGT and/or PFX available for ADCS operations. `svc_adm` is a member of `CertManagers` and holds `WriteProperty` on the `CorpAuth` certificate template — conditions confirmed for Step 5.
 
----
 
 ## Step 5 — ADCS ESC4 → ESC1: Certificate Template Abuse → Domain Admin → DCSync
 
