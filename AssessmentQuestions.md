@@ -4,13 +4,13 @@
 
 > **Instructions:**
 >
-> - Each scenario has **3 MCQs** (choose the single best answer) and **2 Static Answer** questions
+> - Each Range has **3 MCQs** (choose the single best answer) and **2 Static Answer** questions
 > - Questions are based on information gathered **during exploitation** — you must have solved the challenge to answer correctly
 > - Answers are provided at the end of this document for facilitator use only
 
 ---
 
-# SCENARIO 1 — The Haystack (M2: SRV01-WEB)
+# Range 1 — The Haystack (M2: SRV01-WEB)
 
 ### *SMB Share Enumeration + Credential Discovery*
 
@@ -72,7 +72,7 @@
 
 ---
 
-# SCENARIO 2 — The Bridge (M3: SRV02-DB → M4: SRV03-APP)
+# Range 2 — The Bridge (M3: SRV02-DB → M4: SRV03-APP)
 
 ### *SQL Linked Server Pivot via xp_cmdshell*
 
@@ -134,7 +134,7 @@
 
 ---
 
-# SCENARIO 3 — The Escalation (M4: SRV03-APP)
+# Range 3 — The Escalation (M4: SRV03-APP)
 
 ### *PrintSpoofer Privilege Escalation + LSASS Dump*
 
@@ -196,7 +196,7 @@
 
 ---
 
-# SCENARIO 4 — The Shadow (M1: DC01)
+# Range 4 — The Shadow (M1: DC01)
 
 ### *Shadow Credentials Attack via msDS-KeyCredentialLink*
 
@@ -258,7 +258,7 @@
 
 ---
 
-# SCENARIO 5 — The Forge (M5: SRV04-CA)
+# Range 5 — The Forge (M5: SRV04-CA)
 
 ### *ADCS ESC4 → ESC1: Certificate Template Abuse*
 
