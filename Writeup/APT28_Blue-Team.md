@@ -151,11 +151,3 @@ Response: treat as full domain compromise. Lock down template ACLs, revoke the r
 | 3 SYSTEM + LSASS | T1134 / T1003.001 | SRV03-APP Security / Sysmon | 4688, 4720, 4732, 4726, 4733, Sysmon 10 | High–Critical |
 | 4 Shadow Credentials | T1556 / T1558 | DC01 Security | 5136, 4768 (PreAuth 16) | High |
 | 5 ESC4/ESC1 + DCSync | T1649 / T1003.006 | CA + DC Security | 5136/4662, 4886, 4887, 4768, 4662 (repl GUID) | High–Critical |
-
-## Blue skill-check questions
-
-1. Which single event ID and host confirm the Shadow Credentials write, and why does the attack produce no failed-logon event?
-2. What process-lineage pattern catches the SQL linked-server pivot on SRV03-APP?
-3. In the ADCS stage, what field comparison turns 4886/4887 into a high-fidelity alert?
-4. How do you separate a legitimate DCSync (DC-to-DC replication) from the malicious one in this chain?
-5. Order the four remediations by the earliest stage each one breaks, and justify the ordering.
