@@ -7,7 +7,7 @@
 |---|---|
 | **Environment** | 5 × Windows Server 2019 |
 | **Domain** | cyberange.local / cyberange |
-| **Emulated Actor** | APT28 (Forest Blizzard / STRONTIUM / GRU Unit 26165) |
+| **Actor** | APT28 (Forest Blizzard / STRONTIUM / GRU Unit 26165) |
 | **Attack Chain** | Share Maze → SQL Pivot → PrintSpoofer → Shadow Credentials → ESC4/ESC1 → DCSync |
 | **End Goal** | Full Domain Compromise — PKINIT-authenticated DCSync of cyberange.local |
 
