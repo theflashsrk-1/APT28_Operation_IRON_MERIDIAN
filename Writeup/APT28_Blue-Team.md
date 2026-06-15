@@ -1,5 +1,5 @@
 # Operation IRON MERIDIAN — Blue Team Writeup
-## Range 1 (APT28 emulation) · Domain: cyberange.local
+## Range 1 (APT28) · Domain: cyberange.local
 
 This writeup is the defender's view of Range 1. It follows the same five-stage chain the red side walks (anonymous SMB foothold, SQL linked-server pivot, SYSTEM on the app server, Shadow Credentials, ADCS ESC4/ESC1, DCSync) and maps each action to the telemetry it leaves, what an analyst actually sees in that telemetry, how to detect it, and how to shut it down. No malware or exploits are involved, so detection lives almost entirely in authentication, directory, and process logs.
 
